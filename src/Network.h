@@ -48,7 +48,7 @@ private:
 	static int receiveMessage(SOCKET& socket, char* message, int messageLength, int flags);
 	static void createPeerHandshakeMsg(std::vector<char>& msg, const std::string& infoHash, const std::string& selfID);
 	static void flushRecvBuffer(SOCKET& socket);
-	static int connectToPeers(SOCKET& socket, const std::string& infoHash, const std::string& seldID, const std::string& peer);
+	static int connectToPeer(SOCKET& socket, const std::string& infoHash, const std::string& seldID, const std::string& peer);
 	static int sendInterested(SOCKET& socket);
 	static int receiveBitfieldMsg(SOCKET& socket, std::vector<int>& pieceIndices);
 	static int receiveUnchokeMsg(SOCKET& socket);
@@ -57,5 +57,5 @@ private:
 	static int getPieceLength(SOCKET& socket);
 	static int writePieceData(std::ofstream& outfile, const std::vector<char>& message, size_t& remaining, size_t& blockLength, size_t& offset, std::string& piece);
 public:
-	static int downloadPieces(const TorrentInfo& torrentInfo, const std::string& seldID, const std::string& peer, std::string& outputPath);
+	static int downloadPieces(const TorrentInfo& torrentInfo, const std::string& seldID, const std::string& peer, std::string& outputPath, std::vector<int>& downloadedPieces);
 };

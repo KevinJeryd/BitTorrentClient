@@ -59,5 +59,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="sample.torrent" />
+    <None Include=".gitignore" />
+    <None Include=".gitattributes" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="sample.txt" />
   </ItemGroup>
 </Project>

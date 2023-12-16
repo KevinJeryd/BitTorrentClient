@@ -65,7 +65,6 @@ int Network::sendMessage(SOCKET& socket, const char* message, const size_t& mess
         return 0;
     }
     else {
-        std::cout << "Send functioning, sent " << byteCount << " bytes." << std::endl;
         return byteCount;
     }
 }
@@ -85,7 +84,6 @@ int Network::receiveMessage(SOCKET& socket, char* messageBuffer, int messageLeng
         return 0;
     }
     else {
-        std::cout << "Received data: ";
         return byteCount;
     }
 }
@@ -153,7 +151,7 @@ void Network::createPeerHandshakeMsg(std::vector<char>& msg, const std::string& 
     msg.insert(msg.end(), selfID.begin(), selfID.end());
 }
 
-int Network::connectToPeers(SOCKET& clientSocket, const std::string& infoHash, const std::string& selfID, const std::string& peer) {
+int Network::connectToPeer(SOCKET& clientSocket, const std::string& infoHash, const std::string& selfID, const std::string& peer) {
     sockaddr_in clientService;
     std::vector<char> msg;
     size_t divider = peer.find(":");
@@ -362,7 +360,8 @@ std::string Network::downloadPiece(const int& pieceIndex, std::ofstream& outfile
     return piece;
 }
 
-int Network::downloadPieces(const TorrentInfo& torrentInfo, const std::string& selfID, const std::string& peer, std::string& outputPath)
+// Creates a connection to a peer, gathers what pieces the peer has and downloads them.
+int Network::downloadPieces(const TorrentInfo& torrentInfo, const std::string& selfID, const std::string& peer, std::string& outputPath, std::vector<int>& downloadedPieces)
 {
     std::cout << "Initialising connection with peer:" << std::endl;
     std::vector<int> pieceIndices;
@@ -371,7 +370,7 @@ int Network::downloadPieces(const TorrentInfo& torrentInfo, const std::string& s
     const std::string infoHash = utils::hexToString(torrentInfo.hash);
     SOCKET clientSocket;
 
-    if (!Network::connectToPeers(clientSocket, infoHash, selfID, peer)) {
+    if (!Network::connectToPeer(clientSocket, infoHash, selfID, peer)) {
         std::cerr << "Connection failed, restart the program." << std::endl;
         // Should maybe exit program
     }
@@ -400,20 +399,20 @@ int Network::downloadPieces(const TorrentInfo& torrentInfo, const std::string& s
     size_t numPieces = (torrentInfo.length + torrentInfo.pieceLength - 1) / torrentInfo.pieceLength; // + pieceLength - 1 is to round result up
     
     for (size_t pieceIndex = 0; pieceIndex < pieceIndices.size(); pieceIndex++) {
-        std::string piece = Network::downloadPiece(pieceIndices[pieceIndex], outfile, numPieces, torrentInfo, clientSocket, outputPath);
+        if (std::find(downloadedPieces.begin(), downloadedPieces.end(), pieceIndices[pieceIndex]) == downloadedPieces.end()) { // Ensure piece hasn't already been downloaded
+            std::string piece = Network::downloadPiece(pieceIndices[pieceIndex], outfile, numPieces, torrentInfo, clientSocket, outputPath);
         
-        // Verify piece integrity
-        // TODO: For some reason, piecehashes are not matching up. Might be something with the string encoding that's messing up
-        SHA1 checksum;
-        checksum.update(piece);
-        std::string pieceHash = checksum.final();
-
-        std::cout << "PieceHash downloaded: " << pieceHash << std::endl;
-        std::cout << "PieceHash TorrentInfo: " << torrentInfo.pieceHashes[pieceIndices[pieceIndex]] << std::endl;
+            // Verifying piece integrity
+            SHA1 checksum;
+            checksum.update(piece);
+            std::string pieceHash = checksum.final();
      
-        if (pieceHash != torrentInfo.pieceHashes[pieceIndices[pieceIndex]]) {
-            std::cout << "Fatal error, piecehash not matching, cannot very integrity of file!" << std::endl;
-            break;
+            if (pieceHash != torrentInfo.pieceHashes[pieceIndices[pieceIndex]]) {
+                std::cout << "Fatal error, piecehash not matching, cannot very integrity of file!" << std::endl;
+                break;
+            }
+
+            downloadedPieces.push_back(pieceIndices[pieceIndex]);
         }
     }
 

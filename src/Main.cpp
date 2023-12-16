@@ -70,8 +70,9 @@ int main(int argc, char* argv[]) {
     const std::string selfID = "00112233445566778899";
     std::string path = "D:/Dev/BittorrentClient/"; // TODO: Get input from argument
     std::string fullPath = path.append(name);
+    std::vector<int> downloadedPieces;
 
-    Network::downloadPieces(torrentInfo, selfID, peer, fullPath);
+    Network::downloadPieces(torrentInfo, selfID, peer, fullPath, downloadedPieces);
 
     return 0;
 }
